@@ -2,7 +2,7 @@ package io.github.nidhivgandhi.wordsmith.structure;
 
 
 import io.github.nidhivgandhi.wordsmith.structure.dto.StructureResponse;
-import org.springframework.http.ResponseEntity;
+import io.github.nidhivgandhi.wordsmith.web.ResourceNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -18,10 +18,9 @@ public class StructureController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<StructureResponse> one(@PathVariable Long id) {
+    public StructureResponse one(@PathVariable Long id) {
         return repo.findById(id)
             .map(StructureResponse::from)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+            .orElseThrow(() -> new ResourceNotFoundException("No structure found with id " + id));
     }
 }
