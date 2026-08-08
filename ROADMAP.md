@@ -18,8 +18,9 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 - [x] Web-layer slice tests (`@WebMvcTest`) for structure & novel endpoints
 
 ## Pillar 2 — Community & auth (Week 2)
-- [ ] **Geospatial community search (headline feature):** writing groups with a
-      location; "find groups within X miles" using PostGIS
+- [x] **Geospatial community search (headline feature):** writing groups with a
+      `GEOGRAPHY(POINT, 4326)` location (V5); `GET /api/groups/search` finds groups
+      within X miles via `ST_DWithin` over a GiST index, nearest first
 - [ ] JWT authentication (register / login, hashed passwords)
 - [ ] Novel ownership — only the owner can read/modify their novels
 - [ ] Replace permit-all `SecurityConfig` with real authorization rules
@@ -42,3 +43,10 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 ## Known follow-ups
 - `WordsmithApplicationTests` is `@SpringBootTest` and needs a running Postgres;
   switch to Testcontainers when setting up CI.
+- No integration test yet asserts `ST_DWithin` actually returns the right groups —
+  that needs a real PostGIS, so it lands with Testcontainers. Slice tests cover
+  binding, validation and response shape only.
+- Writing groups have no `owner_id` yet; it is added with the users table in the
+  JWT step so ownership is modelled once rather than bolted on twice.
+- `docker-compose.yml` currently lives under `src/main/java/` — move it to the
+  project root when Dockerizing.
