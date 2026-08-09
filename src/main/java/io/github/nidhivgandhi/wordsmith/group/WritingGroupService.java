@@ -3,6 +3,7 @@ package io.github.nidhivgandhi.wordsmith.group;
 import io.github.nidhivgandhi.wordsmith.group.dto.CreateGroupRequest;
 import io.github.nidhivgandhi.wordsmith.group.dto.NearbyGroupResponse;
 import io.github.nidhivgandhi.wordsmith.group.dto.NearbySearchRequest;
+import io.github.nidhivgandhi.wordsmith.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,14 +13,17 @@ import java.util.List;
 public class WritingGroupService {
 
     private final WritingGroupRepository groupRepo;
+    private final UserRepository userRepo;
 
-    public WritingGroupService(WritingGroupRepository groupRepo) {
+    public WritingGroupService(WritingGroupRepository groupRepo, UserRepository userRepo) {
         this.groupRepo = groupRepo;
+        this.userRepo = userRepo;
     }
 
     @Transactional
-    public WritingGroup createGroup(CreateGroupRequest req) {
+    public WritingGroup createGroup(CreateGroupRequest req, Long ownerId) {
         WritingGroup group = new WritingGroup();
+        group.setOwner(userRepo.getReferenceById(ownerId));
         group.setName(req.name());
         group.setDescription(req.description());
         group.setCity(req.city());

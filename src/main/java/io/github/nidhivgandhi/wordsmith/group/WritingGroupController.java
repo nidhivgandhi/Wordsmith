@@ -4,9 +4,11 @@ import io.github.nidhivgandhi.wordsmith.group.dto.CreateGroupRequest;
 import io.github.nidhivgandhi.wordsmith.group.dto.GroupResponse;
 import io.github.nidhivgandhi.wordsmith.group.dto.NearbyGroupResponse;
 import io.github.nidhivgandhi.wordsmith.group.dto.NearbySearchRequest;
+import io.github.nidhivgandhi.wordsmith.security.AuthenticatedUser;
 import io.github.nidhivgandhi.wordsmith.web.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,9 +25,14 @@ public class WritingGroupController {
         this.repo = repo;
     }
 
+    /**
+     * The only endpoint here that requires a token — reading and searching groups stays
+     * public so people can find a group before signing up.
+     */
     @PostMapping
-    public ResponseEntity<GroupResponse> create(@Valid @RequestBody CreateGroupRequest req) {
-        WritingGroup group = service.createGroup(req);
+    public ResponseEntity<GroupResponse> create(@Valid @RequestBody CreateGroupRequest req,
+                                                @AuthenticationPrincipal AuthenticatedUser user) {
+        WritingGroup group = service.createGroup(req, user.id());
         return ResponseEntity.ok(GroupResponse.from(group));
     }
 

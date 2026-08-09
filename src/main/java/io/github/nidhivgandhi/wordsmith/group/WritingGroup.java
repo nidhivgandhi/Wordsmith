@@ -1,5 +1,6 @@
 package io.github.nidhivgandhi.wordsmith.group;
 
+import io.github.nidhivgandhi.wordsmith.user.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -15,6 +16,11 @@ public class WritingGroup {
     private Long id;
 
     private String name;
+
+    /** Nullable by design: the seeded community groups belong to nobody (V6). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -40,6 +46,9 @@ public class WritingGroup {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public User getOwner() { return owner; }
+    public void setOwner(User owner) { this.owner = owner; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

@@ -1,6 +1,7 @@
 package io.github.nidhivgandhi.wordsmith.structure;
 
 import io.github.nidhivgandhi.wordsmith.config.SecurityConfig;
+import io.github.nidhivgandhi.wordsmith.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -25,9 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * database. The repository is supplied as a mock, so we control exactly what
  * the controller sees and assert how it responds.
  *
- * We @Import the real SecurityConfig (which permits all requests and disables
- * CSRF) so the slice behaves like production instead of Spring Security's
- * lock-everything-down default.
+ * We @Import the real SecurityConfig so the slice enforces the same rules as
+ * production. Structures are reference data and stay public, so no token is sent
+ * here — that these requests still return 200 is itself part of what is tested.
  */
 @WebMvcTest(StructureController.class)
 @Import(SecurityConfig.class)
@@ -38,6 +39,13 @@ class StructureControllerTest {
 
     @MockitoBean
     StoryStructureRepository repo;
+
+    /**
+     * @WebMvcTest includes Filter beans, which pulls in JwtAuthenticationFilter and so
+     * its JwtService dependency. Nothing here uses a token; this just satisfies the graph.
+     */
+    @MockitoBean
+    JwtService jwtService;
 
     /** Build a stubbed StoryStructure. The entity has no setters, so we mock its getters. */
     private static StoryStructure stubStructure(long id, String name, String slug) {

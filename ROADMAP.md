@@ -21,9 +21,11 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 - [x] **Geospatial community search (headline feature):** writing groups with a
       `GEOGRAPHY(POINT, 4326)` location (V5); `GET /api/groups/search` finds groups
       within X miles via `ST_DWithin` over a GiST index, nearest first
-- [ ] JWT authentication (register / login, hashed passwords)
-- [ ] Novel ownership — only the owner can read/modify their novels
-- [ ] Replace permit-all `SecurityConfig` with real authorization rules
+- [x] JWT authentication (register / login, BCrypt-hashed passwords, `OncePerRequestFilter`)
+- [x] Novel ownership (V6) — only the owner can read/modify their novels; a novel
+      belonging to someone else returns 404, not 403, so ids cannot be enumerated
+- [x] Replaced permit-all `SecurityConfig` with real rules: auth endpoints, structures
+      and group *reads* are public; everything else authenticated by default
 
 ## Pillar 3 — Habits (Week 3, cut first if tight)
 - [ ] Writing goals + word-count logging
@@ -46,7 +48,11 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 - No integration test yet asserts `ST_DWithin` actually returns the right groups —
   that needs a real PostGIS, so it lands with Testcontainers. Slice tests cover
   binding, validation and response shape only.
-- Writing groups have no `owner_id` yet; it is added with the users table in the
-  JWT step so ownership is modelled once rather than bolted on twice.
 - `docker-compose.yml` currently lives under `src/main/java/` — move it to the
   project root when Dockerizing.
+- `JWT_SECRET` must be set in any real deployment; the default in `application.yml`
+  is a known dev value and anyone holding it can mint valid tokens.
+- Groups can be created but not yet edited or deleted; `writing_groups.owner_id`
+  exists so those endpoints can enforce ownership when they are added.
+- No token refresh or logout. Tokens are valid until they expire (24h default) and
+  cannot be revoked — fine for now, worth revisiting if this grows real users.

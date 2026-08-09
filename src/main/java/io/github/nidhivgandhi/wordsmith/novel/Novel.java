@@ -1,5 +1,6 @@
 package io.github.nidhivgandhi.wordsmith.novel;
 import io.github.nidhivgandhi.wordsmith.structure.StoryStructure;
+import io.github.nidhivgandhi.wordsmith.user.User;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -14,6 +15,11 @@ public class Novel {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "structure_id")
     private StoryStructure structure;
+
+    /** Never null — the database enforces it (V6). LAZY: ownership checks compare ids. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     private String title;
     @Column(columnDefinition = "TEXT")
@@ -32,6 +38,10 @@ public class Novel {
 
     // returns id
     public Long getId() { return id; }
+
+    // get and set methods for owner
+    public User getOwner() { return owner; }
+    public void setOwner(User owner) { this.owner = owner; }
 
     // get and set methods for structure
     public StoryStructure getStructure() { return structure; }

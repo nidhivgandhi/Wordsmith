@@ -2,6 +2,7 @@ package io.github.nidhivgandhi.wordsmith.group;
 
 import io.github.nidhivgandhi.wordsmith.config.SecurityConfig;
 import io.github.nidhivgandhi.wordsmith.group.dto.NearbyGroupResponse;
+import io.github.nidhivgandhi.wordsmith.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -13,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
+import static io.github.nidhivgandhi.wordsmith.support.TestAuth.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +43,14 @@ class WritingGroupControllerTest {
     @MockitoBean
     WritingGroupRepository repo;
 
+    /**
+     * Needed because @WebMvcTest includes Filter beans, which pulls in
+     * JwtAuthenticationFilter and therefore its JwtService dependency. Requests here
+     * authenticate via TestAuth rather than a real token.
+     */
+    @MockitoBean
+    JwtService jwtService;
+
     private static WritingGroup stubGroup(String name, double lat, double lon) {
         WritingGroup g = new WritingGroup();
         g.setName(name);
@@ -52,10 +62,10 @@ class WritingGroupControllerTest {
 
     @Test
     void createReturnsGroupWithCoordinatesEchoedBack() throws Exception {
-        when(service.createGroup(any()))
+        when(service.createGroup(any(), eq(7L)))
                 .thenReturn(stubGroup("Brooklyn Writers Collective", 40.6782, -73.9442));
 
-        mockMvc.perform(post("/api/groups")
+        mockMvc.perform(post("/api/groups").with(user(7L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"Brooklyn Writers Collective","city":"Brooklyn, NY",
@@ -70,7 +80,7 @@ class WritingGroupControllerTest {
 
     @Test
     void createReturns400WhenCoordinatesOutOfRange() throws Exception {
-        mockMvc.perform(post("/api/groups")
+        mockMvc.perform(post("/api/groups").with(user(7L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Nowhere\",\"latitude\":95.0,\"longitude\":-200.0}"))
                 .andExpect(status().isBadRequest())
@@ -78,12 +88,12 @@ class WritingGroupControllerTest {
                 .andExpect(jsonPath("$.fieldErrors.latitude").value("latitude must be between -90 and 90"))
                 .andExpect(jsonPath("$.fieldErrors.longitude").value("longitude must be between -180 and 180"));
 
-        verify(service, never()).createGroup(any());
+        verify(service, never()).createGroup(any(), any());
     }
 
     @Test
     void createReturns400WhenMeetingFormatUnknown() throws Exception {
-        mockMvc.perform(post("/api/groups")
+        mockMvc.perform(post("/api/groups").with(user(7L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"Group","meetingFormat":"telepathic",
@@ -139,6 +149,30 @@ class WritingGroupControllerTest {
                         .param("lon", "-73.9442"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.radiusMiles").value("radiusMiles is required"));
+    }
+
+    /**
+     * Discovery is public by design — you can find a writing group before you have an
+     * account. This test exists so that stays a decision rather than an accident: it
+     * fails loudly if the security rules ever close these off.
+     */
+    @Test
+    void searchAndReadStayPublicButCreatingRequiresAToken() throws Exception {
+        when(service.findNearby(any())).thenReturn(List.of());
+        when(repo.findAll()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/groups/search")
+                        .param("lat", "40.6782").param("lon", "-73.9442").param("radiusMiles", "25"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/groups")).andExpect(status().isOk());
+
+        // ...but writing does not.
+        mockMvc.perform(post("/api/groups")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"G\",\"latitude\":40.0,\"longitude\":-73.0}"))
+                .andExpect(status().isUnauthorized());
+
+        verify(service, never()).createGroup(any(), any());
     }
 
     @Test

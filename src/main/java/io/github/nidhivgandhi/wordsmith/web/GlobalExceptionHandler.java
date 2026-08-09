@@ -1,5 +1,7 @@
 package io.github.nidhivgandhi.wordsmith.web;
 
+import io.github.nidhivgandhi.wordsmith.auth.EmailAlreadyUsedException;
+import io.github.nidhivgandhi.wordsmith.auth.InvalidCredentialsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -52,6 +54,27 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.badRequest()
                 .body(ApiError.of(HttpStatus.BAD_REQUEST, ex.getMessage()));
+    }
+
+    /**
+     * Registration with an email that already has an account. -> 409 Conflict, not 400:
+     * the request itself is well-formed, it just conflicts with the current state.
+     */
+    @ExceptionHandler(EmailAlreadyUsedException.class)
+    public ResponseEntity<ApiError> handleEmailAlreadyUsed(EmailAlreadyUsedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiError.of(HttpStatus.CONFLICT, ex.getMessage()));
+    }
+
+    /**
+     * Bad login. -> 401. The message is identical whether the email is unknown or the
+     * password is wrong; distinguishing them turns the login form into a tool for
+     * discovering which email addresses have accounts here.
+     */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiError.of(HttpStatus.UNAUTHORIZED, ex.getMessage()));
     }
 
     // Deliberately no catch-all @ExceptionHandler(Exception.class): a broad handler
