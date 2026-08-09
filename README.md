@@ -7,8 +7,15 @@ Built with Spring Boot 4, Java 21, and PostgreSQL + PostGIS.
 
 [![CI](https://github.com/nidhivgandhi/Wordsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/nidhivgandhi/Wordsmith/actions/workflows/ci.yml)
 
-> **Live demo:** _not deployed yet — see [Deployment](#deployment)._
-> The free tier sleeps when idle, so the first request may take ~50 seconds.
+**Live:** <https://wordsmith-ps3q.onrender.com>
+
+```bash
+# Writing groups within 25 miles of Brooklyn — no account needed
+curl "https://wordsmith-ps3q.onrender.com/api/groups/search?lat=40.6782&lon=-73.9442&radiusMiles=25"
+```
+
+> Hosted on a free tier that sleeps after 15 minutes idle, so the **first request may
+> take ~50 seconds** while the container wakes. Everything after that is fast.
 
 ---
 
@@ -286,7 +293,8 @@ this repo — where anyone reading the source could mint valid tokens.
 **To deploy:** connect this repository as a Blueprint at
 [dashboard.render.com](https://dashboard.render.com/select-repo?type=blueprint), and
 Render reads `render.yaml`. The first boot runs every migration, including
-`CREATE EXTENSION postgis`.
+`CREATE EXTENSION postgis` — so PostGIS is enabled by the same migration history that
+runs locally, with no manual database setup. Pushes to `main` deploy automatically.
 
 ---
 

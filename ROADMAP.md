@@ -39,8 +39,11 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 - [x] GitHub Actions CI (`mvn verify` on push/PR, then a Docker build gated on tests)
 - [x] Dockerize the app (multi-stage, non-root, verified running locally)
 - [x] README with architecture diagram + geospatial and auth write-ups
-- [ ] **Deploy live** — `render.yaml` is committed; needs the Render Blueprint
-      connected to the GitHub repo (a manual, account-level step)
+- [x] **Deployed live:** <https://wordsmith-ps3q.onrender.com> (Render Blueprint,
+      auto-deploys on push to `main`)
+
+**Pillars 1 + 2 are shipped.** The guiding rule is satisfied — everything from here is
+upside.
 
 ## Buffer / stretch
 - [ ] AI feature: analyze an outline for structural gaps (analysis only, never prose)
@@ -51,6 +54,8 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 - [ ] Edit a novel's structure in place instead of creating a new novel
 
 ## Known follow-ups
+- The Render Postgres is on the **free plan, which expires after 30 days**
+  (created 2026-08-08). Upgrade it before then if the demo link should stay alive.
 - Testcontainers must stay at **1.21.4 or newer**: 1.21.3 cannot talk to Docker
   Engine 29+ (every strategy fails with HTTP 400 on `/info`, reported misleadingly
   as "Could not find a valid Docker environment").
