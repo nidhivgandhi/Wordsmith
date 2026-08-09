@@ -29,7 +29,22 @@
 	<properties>
 		<java.version>21</java.version>
 		<jjwt.version>0.12.6</jjwt.version>
+		<testcontainers.version>1.21.4</testcontainers.version>
 	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<!-- Spring Boot 4's parent does not manage Testcontainers versions, so we
+			     import their BOM to keep the modules aligned with each other. -->
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${testcontainers.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -101,6 +116,24 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Testcontainers: integration tests start their own PostGIS in Docker, so the
+		     suite no longer depends on a database happening to be running locally. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
     		<groupId>org.hibernate.orm</groupId>
     		<artifactId>hibernate-spatial</artifactId>
@@ -133,6 +166,31 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+
+			<!--
+			  Splits the suite in two:
+
+			    mvn test    -> Surefire runs *Test classes: unit + web slices. No Docker,
+			                   no database, a few seconds. This is the fast feedback loop.
+			    mvn verify  -> Failsafe additionally runs *IT classes, which start a real
+			                   PostGIS container.
+
+			  The split matters because the tests have genuinely different costs. Keeping
+			  them together would mean either paying container startup on every small
+			  change, or never running the slow ones.
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

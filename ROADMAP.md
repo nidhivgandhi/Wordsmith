@@ -32,8 +32,10 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 - [ ] Streaks
 - [ ] Scheduled reminder job
 
-## Ship it (Week 3 — real deadline)
-- [ ] Testcontainers so tests don't need a live DB (unblocks CI)
+## Ship it (next — before the frontend)
+- [x] Testcontainers so tests don't need a live DB (unblocks CI).
+      `mvn test` = unit + slice, no Docker. `mvn verify` also runs `*IT` against a
+      real PostGIS container, including the `ST_DWithin` query.
 - [ ] GitHub Actions CI
 - [ ] Dockerize the app
 - [ ] Deploy live
@@ -42,12 +44,15 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 ## Buffer / stretch
 - [ ] AI feature: analyze an outline for structural gaps (analysis only, never prose)
 
+## After shipping
+- [ ] Frontend, so the app is actually usable day to day
+- [ ] Pillar 3 (goals / word counts / streaks / reminders)
+- [ ] Edit a novel's structure in place instead of creating a new novel
+
 ## Known follow-ups
-- `WordsmithApplicationTests` is `@SpringBootTest` and needs a running Postgres;
-  switch to Testcontainers when setting up CI.
-- No integration test yet asserts `ST_DWithin` actually returns the right groups —
-  that needs a real PostGIS, so it lands with Testcontainers. Slice tests cover
-  binding, validation and response shape only.
+- Testcontainers must stay at **1.21.4 or newer**: 1.21.3 cannot talk to Docker
+  Engine 29+ (every strategy fails with HTTP 400 on `/info`, reported misleadingly
+  as "Could not find a valid Docker environment").
 - `docker-compose.yml` currently lives under `src/main/java/` — move it to the
   project root when Dockerizing.
 - `JWT_SECRET` must be set in any real deployment; the default in `application.yml`
