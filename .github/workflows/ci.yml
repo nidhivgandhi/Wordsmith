@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A second push to the same branch cancels the first run still in progress. Without
+# this, a burst of commits queues up builds whose results nobody will read.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          # Caches ~/.m2 keyed on pom.xml, so unchanged dependencies are not
+          # re-downloaded on every run.
+          cache: 'maven'
+
+      # `verify` runs both phases: Surefire's unit and slice tests, then Failsafe's
+      # integration tests. The GitHub-hosted runner has a Docker daemon available, so
+      # Testcontainers starts a real PostGIS here exactly as it does locally — which is
+      # the entire reason the Testcontainers work came before this file.
+      - name: Build and test
+        run: mvn -B verify
+
+      # Runs even when tests fail — a red build is precisely when you want the report.
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+          retention-days: 7
+
+  docker:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    # Only after the tests pass: an image built from broken code is not worth the
+    # minutes, and this keeps a red test suite from producing a deployable artifact.
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Proves the Dockerfile still builds on every change. No push and no registry
+      # credentials — Render builds its own image from this same Dockerfile on deploy,
+      # so publishing one here would be redundant.
+      - name: Build image
+        run: docker build -t wordsmith:${{ github.sha }} .

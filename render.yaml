@@ -1,0 +1,58 @@
+# Render Blueprint — infrastructure as code.
+#
+# The value of keeping this in the repo rather than clicking through a dashboard is
+# that the deployment is reviewable, diffable, and reproducible: anyone can read what
+# the running service looks like, and recreating it is one action rather than a
+# remembered sequence of form fills.
+
+services:
+  - type: web
+    name: wordsmith
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+
+    # Render waits for this to return 200 before routing traffic to a new deploy, so a
+    # release that cannot reach its database never replaces the working one.
+    healthCheckPath: /actuator/health
+
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      # Generated once by Render and never stored in this repo. Because the prod
+      # profile declares ${JWT_SECRET} with no fallback, a missing value fails the
+      # deploy rather than quietly falling back to the dev secret.
+      - key: JWT_SECRET
+        generateValue: true
+
+      # Wired from the managed database below. Render keeps these in sync, so
+      # credentials never appear in source control.
+      - key: DB_HOST
+        fromDatabase:
+          name: wordsmith-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: wordsmith-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: wordsmith-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: wordsmith-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: wordsmith-db
+          property: password
+
+databases:
+  - name: wordsmith-db
+    plan: free
+    postgresMajorVersion: "16"
+    # PostGIS is not enabled by default; the V1 migration runs CREATE EXTENSION postgis
+    # on first boot, which Render permits on its managed Postgres.

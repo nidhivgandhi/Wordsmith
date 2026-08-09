@@ -65,6 +65,19 @@ class JwtServiceTest {
     }
 
     @Test
+    void refusesToStartWhenTheSecretEnvVarWasNeverSet() {
+        // Spring passes an unresolved placeholder through as a literal string rather
+        // than failing, so this is what an unset JWT_SECRET actually looks like in prod.
+        assertThatThrownBy(() -> serviceWith("${JWT_SECRET}", 60))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("JWT_SECRET is not set");
+
+        assertThatThrownBy(() -> serviceWith("   ", 60))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("JWT_SECRET is not set");
+    }
+
+    @Test
     void refusesToStartWithATooShortSecret() {
         // Caught at construction, so a weak secret fails deployment rather than quietly
         // producing weak tokens.

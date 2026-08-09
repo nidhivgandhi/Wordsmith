@@ -1,0 +1,24 @@
+# Active when SPRING_PROFILES_ACTIVE=prod (set by render.yaml).
+#
+# The single job of this file is to remove development conveniences that are dangerous
+# in production.
+
+wordsmith:
+  jwt:
+    # No default. If JWT_SECRET is not set, startup fails immediately and loudly —
+    # which is far better than booting happily on the dev secret that is committed to
+    # this repo, where anyone reading the source could mint valid tokens.
+    secret: ${JWT_SECRET}
+
+spring:
+  jpa:
+    # Never let Hibernate touch the schema. Flyway owns it; validate only checks that
+    # the entities and the migrated schema agree, and refuses to start if they drifted.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+logging:
+  level:
+    root: INFO
+    io.github.nidhivgandhi.wordsmith: INFO

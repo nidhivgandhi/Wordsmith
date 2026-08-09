@@ -1,0 +1,24 @@
+# Everything here is either rebuilt inside the image or has no business in it.
+# A smaller build context also means faster builds and fewer spurious cache misses.
+
+target/
+.git/
+.gitignore
+.mvn/
+mvnw
+mvnw.cmd
+
+.idea/
+.vscode/
+*.iml
+
+README.md
+ROADMAP.md
+Dockerfile
+.dockerignore
+render.yaml
+.github/
+
+# Never ship local secrets or env files into an image layer.
+.env
+*.env

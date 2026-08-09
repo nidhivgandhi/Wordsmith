@@ -1,6 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/wordsmith
+    # Built from parts rather than one URL: Render supplies host/port/database/user/
+    # password as separate values, and the defaults here keep local dev working with
+    # docker-compose without anything being set.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:wordsmith}
     username: ${DB_USER:postgres}
     password: ${DB_PASSWORD:postgres}
   jpa:
@@ -10,12 +13,25 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  # Hosting platforms assign a port and pass it in as PORT. Binding to anything else
+  # means the platform's health check never reaches the app.
+  port: ${PORT:8080}
 
 wordsmith:
   jwt:
-    # HS256 needs at least 256 bits of key. The default here is for local dev only —
-    # anyone with the secret can mint valid tokens, so real deployments set JWT_SECRET.
+    # Local-development default only. The prod profile overrides this with a required
+    # env var so a deploy cannot silently run on a secret that is in a public repo.
     secret: ${JWT_SECRET:dev-only-secret-change-me-please-32-bytes-min}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
-  
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Health only. The default set is small, but being explicit keeps a future
+        # dependency from quietly publishing env vars or heap dumps to the internet.
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

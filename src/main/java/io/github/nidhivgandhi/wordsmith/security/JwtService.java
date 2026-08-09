@@ -32,7 +32,18 @@ public class JwtService {
     private final Duration expiration;
 
     public JwtService(JwtProperties props) {
-        byte[] secretBytes = props.secret().getBytes(StandardCharsets.UTF_8);
+        String secret = props.secret();
+
+        // An unset env var does not blow up on its own — Spring hands the placeholder
+        // through as the literal string "${JWT_SECRET}". Caught here it would otherwise
+        // surface as a baffling "must be at least 32 bytes (got 13)".
+        if (secret == null || secret.isBlank() || secret.startsWith("${")) {
+            throw new IllegalStateException(
+                    "JWT_SECRET is not set. The prod profile requires it — generate one with "
+                            + "`openssl rand -base64 48` and set it as an environment variable.");
+        }
+
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
         // Fail loudly at startup rather than at the first login: HS256 requires a key of
         // at least 256 bits, and a short secret is a weak secret.
         if (secretBytes.length < 32) {
