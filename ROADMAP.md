@@ -36,10 +36,11 @@ Postgres + PostGIS, Flyway migrations, schema owned in SQL (`ddl-auto: validate`
 - [x] Testcontainers so tests don't need a live DB (unblocks CI).
       `mvn test` = unit + slice, no Docker. `mvn verify` also runs `*IT` against a
       real PostGIS container, including the `ST_DWithin` query.
-- [ ] GitHub Actions CI
-- [ ] Dockerize the app
-- [ ] Deploy live
-- [ ] README with architecture diagram + write-ups of the geospatial & streak logic
+- [x] GitHub Actions CI (`mvn verify` on push/PR, then a Docker build gated on tests)
+- [x] Dockerize the app (multi-stage, non-root, verified running locally)
+- [x] README with architecture diagram + geospatial and auth write-ups
+- [ ] **Deploy live** — `render.yaml` is committed; needs the Render Blueprint
+      connected to the GitHub repo (a manual, account-level step)
 
 ## Buffer / stretch
 - [ ] AI feature: analyze an outline for structural gaps (analysis only, never prose)
